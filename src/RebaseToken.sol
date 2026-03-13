@@ -2,4 +2,8 @@
 
 pragma solidity ^0.8.24;
 
-contract RebaseToken {}
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract RebaseToken is ERC20 {
+    constructor() ERC20("RebaseToken", "RBT") {}
+}
