@@ -50,6 +50,19 @@ contract RebaseToken is ERC20 {
     }
 
     /**
+     * @notice Burns the user's tokens when they withdraw from the vault.
+     * @param _from The address of the user to burn tokens from.
+     * @param _amount The amount of tokens to burn.
+     */
+    function burn(address _from, uint256 _amount) external {
+        if (_amount == type(uint256).max) {
+            _amount = balanceOf(_from); // if the user wants to burn all their tokens, we need to calculate the amount to burn based on their balance including interest
+        }
+        _mintAccruedInterest(_from); // mint the accrued interest for the user before burning tokens
+        _burn(_from, _amount); // implemented in ERC20
+    }
+
+    /**
      * @notice Calculates the user's balance including any accrued interest since the last update.
      * (principal balance) + some interest that has accrued.
      * @param _user The user address to calculate the balance for.
@@ -84,13 +97,22 @@ contract RebaseToken is ERC20 {
         linearInterest = PRECISION_FACTOR + (s_userInterestRate[_user] * timeElapsed);
     }
 
+    /**
+     * @notice Mints the accrued interest to the user since the last time they interacted with the protocol (e.g. burn, mint, transfer).
+     * @param _user The address of the user to mint the accrued interest to.
+     * @dev The function calculates the user's current balance including any accrued interest, calculates the number of tokens that need to be minted to the user, updates the user's last updated timestamp, and calls _mint() to mint the tokens to the user.
+     */
     function _mintAccruedInterest(address _user) internal {
         // 1. Find their current balance of rebase tokens that has been minted to the user -> principal balance
+        uint256 previousPrincipalBalance = super.balanceOf(_user);
         // 2. Calculate their current balance including any accrued interest -> balanceOf
+        uint256 currentBalanceWithInterest = balanceOf(_user);
         // 3. Calculate the number of tokens that need to be minted to the user -> interest = {2} - (1)
-        // 4. Call _mint() to mint the tokens to the user
-        // Set the user's last updated timestamp
+        uint256 balanceIncrease = currentBalanceWithInterest - previousPrincipalBalance;
+        // 4. Set the user's last updated timestamp
         s_userLastUpdatedTimestamp[_user] = block.timestamp;
+        // 5. Call _mint() to mint the tokens to the user
+        _mint(_user, balanceIncrease); // this function already emits an event, so we don't need to emit another event here
     }
 
     /**
