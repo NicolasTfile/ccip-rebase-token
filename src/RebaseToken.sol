@@ -3,6 +3,8 @@
 pragma solidity ^0.8.24;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title RebaseToken
@@ -11,24 +13,29 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  * @notice The interest rate in the smart contract can only decrease.
  * @notice Each user will have their own interest rate that is the global interest rate at the time of depositing.
  */
-contract RebaseToken is ERC20 {
+contract RebaseToken is ERC20, Ownable, AccessControl {
     error RebaseToken__InterestRateCanOnlyDecrease(uint256 oldInterestRate, uint256 newInterestRate);
 
     uint256 private constant PRECISION_FACTOR = 1e18;
+    bytes32 private constant MINT_AND_BURN_ROLE = keccak256("MINT_AND_BURN_ROLE");
     uint256 private s_interestRate = 5e10;
     mapping(address => uint256) private s_userInterestRate;
     mapping(address => uint256) private s_userLastUpdatedTimestamp;
 
     event InterestRateSet(uint256 newInterestRate);
 
-    constructor() ERC20("RebaseToken", "RBT") {}
+    constructor() ERC20("RebaseToken", "RBT") Ownable(msg.sender) {}
+
+    function grantMintAndBurnRole(address _account) external onlyOwner {
+        _grantRole(MINT_AND_BURN_ROLE, _account); // Known security risk (issue of centralization): granting this role allows the user to mint and burn tokens
+    }
 
     /**
      * @notice Sets the new interest rate for the token, The interest rate can only decrease.
      * @param _newInterestRate The new interest rate to be set.
      * @dev The function checks if the new interest rate is less than the current interest rate and reverts if it is not. If the new interest rate is valid, it updates the state variable and emits an event.
      */
-    function setInterestRate(uint256 _newInterestRate) external {
+    function setInterestRate(uint256 _newInterestRate) external onlyOwner {
         // Logic to set the new interest rate, ensuring it can only decrease
         if (_newInterestRate < s_interestRate) {
             revert RebaseToken__InterestRateCanOnlyDecrease(s_interestRate, _newInterestRate);
@@ -52,7 +59,7 @@ contract RebaseToken is ERC20 {
      * @param _to The address of the user to mint tokens to.
      * @param _amount The amount of tokens to mint.
      */
-    function mint(address _to, uint256 _amount) external {
+    function mint(address _to, uint256 _amount) external onlyRole(MINT_AND_BURN_ROLE) {
         _mintAccruedInterest(_to); // mint the accrued interest for the user before minting new tokens
         s_userInterestRate[_to] = s_interestRate; // set the user's interest rate to the current global interest rate at the time of minting
         _mint(_to, _amount); // implemented in ERC20
@@ -63,7 +70,7 @@ contract RebaseToken is ERC20 {
      * @param _from The address of the user to burn tokens from.
      * @param _amount The amount of tokens to burn.
      */
-    function burn(address _from, uint256 _amount) external {
+    function burn(address _from, uint256 _amount) external onlyRole(MINT_AND_BURN_ROLE) {
         if (_amount == type(uint256).max) {
             _amount = balanceOf(_from); // if the user wants to burn all their tokens, we need to calculate the amount to burn based on their balance including interest
         }
