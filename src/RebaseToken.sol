@@ -26,8 +26,13 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
 
     constructor() ERC20("RebaseToken", "RBT") Ownable(msg.sender) {}
 
+    /**
+     * @notice Grants the MINT_AND_BURN_ROLE to an account, allowing them to mint and burn tokens. This function can only be called by the owner of the contract.
+     * @param _account The address of the account to grant the MINT_AND_BURN_ROLE to.
+     * @dev Granting this role allows the user to mint and burn tokens, which is a known security risk and centralization issue. Therefore, this function should be used with caution and only granted to trusted accounts.
+     */
     function grantMintAndBurnRole(address _account) external onlyOwner {
-        _grantRole(MINT_AND_BURN_ROLE, _account); // Known security risk (issue of centralization): granting this role allows the user to mint and burn tokens
+        _grantRole(MINT_AND_BURN_ROLE, _account);
     }
 
     /**
