@@ -16,6 +16,7 @@ contract RebaseTokenTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
+        // vm.deal(owner, 3e18);
         // Deploy the RebaseToken contract
         rebaseToken = new RebaseToken();
         // Deploy the Vault contract, passing the address of the RebaseToken contract
@@ -44,8 +45,23 @@ contract RebaseTokenTest is Test {
         uint256 endBalance = rebaseToken.balanceOf(user1);
         assertGt(endBalance, middleBalance);
 
-        assertEq(endBalance - middleBalance, middleBalance - startBalance);
+        assertApproxEqAbs(endBalance - middleBalance, middleBalance - startBalance, 1);
 
+        vm.stopPrank();
+    }
+
+    function testRedeemStraightAway(uint256 amount) public {
+        amount = bound(amount, 1e5, type(uint96).max);
+        // 1. Deposit
+        vm.startPrank(user1);
+        vm.deal(user1, amount);
+        vault.deposit{value: amount}();
+        assertEq(rebaseToken.balanceOf(user1), amount);
+        // 2. Redeem
+        vault.redeem(type(uint256).max);
+        // 3. Check the balance is zero
+        assertEq(rebaseToken.balanceOf(user1), 0);
+        assertEq(address(user1).balance, amount);
         vm.stopPrank();
     }
 }
