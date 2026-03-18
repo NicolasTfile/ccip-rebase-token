@@ -14,6 +14,8 @@ contract Vault {
 
     event Deposit(address indexed user, uint256 amount);
 
+    error Vault__RedeemFailed();
+
     constructor(IRebaseToken _rebaseToken) {
         i_rebaseToken = _rebaseToken;
     }
@@ -30,7 +32,10 @@ contract Vault {
         // 1. Burn the tokens from the user
         i_rebaseToken.burn(msg.sender, _amount);
         // 2. Send the user the equivalent amount of ETH
-        payable(msg.sender).call{value: _amount}("");
+        (bool success,) = payable(msg.sender).call{value: _amount}("");
+        if (!success) {
+            revert Vault__RedeemFailed();
+        }
     }
 
     function getRebaseTokenAddress() external view returns (address) {
