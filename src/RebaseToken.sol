@@ -135,7 +135,7 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
     /**
      * @notice Calculates the user's accumulated interest since the last update.
      * @param _user The user address to calculate the accumulated interest for.
-     * @return The user's accumulated interest since the last update.
+     * @return linearInterest The user's accumulated interest since the last update.
      */
     function _calculateUserAccumulatedInterestSinceLastUpdate(address _user)
         internal
