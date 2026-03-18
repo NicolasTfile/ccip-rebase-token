@@ -10,6 +10,8 @@ contract Vault {
 
     address private immutable i_rebaseToken;
 
+    event Deposit(address indexed user, uint256 amount);
+
     constructor(address _rebaseToken) {
         i_rebaseToken = _rebaseToken;
     }
@@ -17,7 +19,9 @@ contract Vault {
     receive() external payable {}
 
     function deposit() external payable {
-        //
+        // We need to use the amount of ETH the user has sent to mint the same amount of tokens to the user
+        i_rebaseToken.mint(msg.sender, msg.value);
+        emit Deposit(msg.sender, msg.value);
     }
 
     function getRebaseTokenAddress() external view returns (address) {
