@@ -38,6 +38,9 @@ contract Vault {
      * @dev The function first calls the burn function of the rebase token contract to burn the specified amount of tokens from the user's address. Then, it attempts to send the equivalent amount of ETH back to the user using a low-level call. If the call fails, an error is reverted. An event is emitted to log the redeem action.
      */
     function redeem(uint256 _amount) external {
+        if (_amount == type(uint256).max) {
+            _amount = i_rebaseToken.balanceOf(msg.sender); // if the user wants to burn/redeem all their tokens, we need to calculate the amount based on their balance including interest
+        }
         // 1. Burn the tokens from the user
         i_rebaseToken.burn(msg.sender, _amount);
         // 2. Send the user the equivalent amount of ETH

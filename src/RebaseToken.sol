@@ -76,9 +76,6 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      * @param _amount The amount of tokens to burn.
      */
     function burn(address _from, uint256 _amount) external onlyRole(MINT_AND_BURN_ROLE) {
-        if (_amount == type(uint256).max) {
-            _amount = balanceOf(_from); // if the user wants to burn all their tokens, we need to calculate the amount to burn based on their balance including interest
-        }
         _mintAccruedInterest(_from); // mint the accrued interest for the user before burning tokens
         _burn(_from, _amount); // implemented in ERC20
     }
