@@ -143,4 +143,19 @@ contract RebaseTokenTest is Test {
         vm.expectPartialRevert(bytes4(IAccessControl.AccessControlUnauthorizedAccount.selector));
         rebaseToken.burn(user1, 100);
     }
+
+    function testGetPrincipalAmount(uint256 amount) public {
+        amount = bound(amount, 1e5, type(uint96).max);
+        vm.deal(user1, amount);
+        vm.prank(user1);
+        vault.deposit{value: amount}();
+        assertEq(rebaseToken.principalBalanceOf(user1), amount);
+
+        vm.warp(block.timestamp + 1 hours);
+        assertEq(rebaseToken.principalBalanceOf(user1), amount);
+    }
+
+    function testGetRebaseTokenAddress() public view {
+        assertEq(vault.getRebaseTokenAddress(), address(rebaseToken));
+    }
 }
