@@ -16,7 +16,7 @@ contract RebaseTokenTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        // vm.deal(owner, 3e18);
+        // vm.deal(owner, 5e18);
         // Deploy the RebaseToken contract
         rebaseToken = new RebaseToken();
         // Deploy the Vault contract, passing the address of the RebaseToken contract
@@ -82,6 +82,7 @@ contract RebaseTokenTest is Test {
         vm.warp(block.timestamp + time);
         uint256 balanceAfterSomeTime = rebaseToken.balanceOf(user1);
         // 2. (b) Add the rewards to the vault
+        vm.deal(owner, balanceAfterSomeTime - depositAmount);
         vm.prank(owner);
         addRewardsToVault(balanceAfterSomeTime - depositAmount);
         // 3. Redeem
