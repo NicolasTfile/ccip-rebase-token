@@ -92,6 +92,10 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
         return super.balanceOf(_user) * _calculateUserAccumulatedInterestSinceLastUpdate(_user) / PRECISION_FACTOR;
     }
 
+    function approve(address spender, uint256 value) public override returns (bool) {
+        return super.approve(spender, value);
+    }
+
     /**
      * @notice Transfer tokens from one user to another
      * @param _recipient The user to transfer the tokens to

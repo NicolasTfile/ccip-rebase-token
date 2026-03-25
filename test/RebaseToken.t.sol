@@ -18,13 +18,11 @@ contract RebaseTokenTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        // vm.deal(owner, 5e18);
         // Deploy the RebaseToken contract
         rebaseToken = new RebaseToken();
         // Deploy the Vault contract, passing the address of the RebaseToken contract
         vault = new Vault(IRebaseToken(address(rebaseToken)));
         rebaseToken.grantMintAndBurnRole(address(vault));
-        // (bool success,) = payable(address(vault)).call{value: 1e18}("");
         vm.stopPrank();
     }
 
@@ -130,6 +128,85 @@ contract RebaseTokenTest is Test {
         assertEq(rebaseToken.getUserInterestRate(user2), 5e10);
     }
 
+    function testMaxTransferUpdatesAmount() public {
+        uint256 amount = 100;
+        uint256 maxAmount = type(uint256).max;
+
+        // 1. deposit
+        vm.deal(user1, amount);
+        vm.prank(user1);
+        vault.deposit{value: amount}();
+
+        address user2 = makeAddr("user2");
+        uint256 user1Balance = rebaseToken.balanceOf(user1);
+        uint256 user2Balance = rebaseToken.balanceOf(user2);
+        assertEq(user1Balance, amount);
+        assertEq(user2Balance, 0);
+
+        // 2. transfer
+        vm.prank(user1);
+        rebaseToken.transfer(user2, maxAmount);
+        uint256 user1BalanceAfterTransfer = rebaseToken.balanceOf(user1);
+        uint256 user2BalanceAfterTransfer = rebaseToken.balanceOf(user2);
+
+        assertEq(user1BalanceAfterTransfer, 0);
+        assertEq(user2BalanceAfterTransfer, amount);
+    }
+
+    function testTransferFrom(uint256 amount, uint256 amountToSend) public {
+        amount = bound(amount, 1e5 + 1e5, type(uint96).max);
+        amountToSend = bound(amountToSend, 1e5, amount - 1e5);
+
+        // 1. deposit
+        vm.deal(user1, amount);
+        vm.prank(user1);
+        vault.deposit{value: amount}();
+
+        address user2 = makeAddr("user2");
+        uint256 user1Balance = rebaseToken.balanceOf(user1);
+        uint256 user2Balance = rebaseToken.balanceOf(user2);
+        assertEq(user1Balance, amount);
+        assertEq(user2Balance, 0);
+
+        // 2. transferFrom
+        vm.startPrank(user1);
+        rebaseToken.approve(user1, amountToSend);
+        rebaseToken.transferFrom(user1, user2, amountToSend);
+        uint256 user1BalanceAfterTransfer = rebaseToken.balanceOf(user1);
+        uint256 user2BalanceAfterTransfer = rebaseToken.balanceOf(user2);
+        vm.stopPrank();
+
+        assertEq(user1BalanceAfterTransfer, user1Balance - amountToSend);
+        assertEq(user2BalanceAfterTransfer, amountToSend);
+    }
+
+    function testMaxTransferFromUpdatesAmount() public {
+        uint256 amount = 100;
+        uint256 maxAmount = type(uint256).max;
+
+        // 1. deposit
+        vm.deal(user1, amount);
+        vm.prank(user1);
+        vault.deposit{value: amount}();
+
+        address user2 = makeAddr("user2");
+        uint256 user1Balance = rebaseToken.balanceOf(user1);
+        uint256 user2Balance = rebaseToken.balanceOf(user2);
+        assertEq(user1Balance, amount);
+        assertEq(user2Balance, 0);
+
+        // 2. transferFrom
+        vm.startPrank(user1);
+        rebaseToken.approve(user1, amount);
+        rebaseToken.transferFrom(user1, user2, maxAmount);
+        uint256 user1BalanceAfterTransfer = rebaseToken.balanceOf(user1);
+        uint256 user2BalanceAfterTransfer = rebaseToken.balanceOf(user2);
+        vm.stopPrank();
+
+        assertEq(user1BalanceAfterTransfer, 0);
+        assertEq(user2BalanceAfterTransfer, amount);
+    }
+
     function testCannotSetInterestRateIfNotOwner(uint256 newInterestRate) public {
         vm.prank(user1);
         vm.expectPartialRevert(bytes4(Ownable.OwnableUnauthorizedAccount.selector));
@@ -137,11 +214,12 @@ contract RebaseTokenTest is Test {
     }
 
     function testCannotCallMintAndBurn() public {
-        vm.prank(user1);
+        vm.startPrank(user1);
         vm.expectPartialRevert(bytes4(IAccessControl.AccessControlUnauthorizedAccount.selector));
         rebaseToken.mint(user1, 100);
         vm.expectPartialRevert(bytes4(IAccessControl.AccessControlUnauthorizedAccount.selector));
         rebaseToken.burn(user1, 100);
+        vm.stopPrank();
     }
 
     function testGetPrincipalAmount(uint256 amount) public {
@@ -166,5 +244,24 @@ contract RebaseTokenTest is Test {
         vm.expectPartialRevert(bytes4(RebaseToken.RebaseToken__InterestRateCanOnlyDecrease.selector));
         rebaseToken.setInterestRate(newInterestRate);
         assertEq(rebaseToken.getInterestRate(), initialInterestRate);
+    }
+
+    function testCannotGrantMintAndBurnRoleIfNotOwner() public {
+        address user2 = makeAddr("user2");
+        vm.prank(user1);
+        vm.expectPartialRevert(bytes4(Ownable.OwnableUnauthorizedAccount.selector));
+        rebaseToken.grantMintAndBurnRole(user2);
+    }
+
+    function testOwnerCanGrantMintAndBurnRole() public {
+        vm.prank(owner);
+        rebaseToken.grantMintAndBurnRole(user1);
+
+        vm.startPrank(user1);
+        rebaseToken.mint(user1, 500);
+        rebaseToken.burn(user1, 100);
+        vm.stopPrank();
+
+        assertEq(rebaseToken.balanceOf(user1), 400);
     }
 }
