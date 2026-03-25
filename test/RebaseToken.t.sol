@@ -6,6 +6,8 @@ import {Test, console} from "forge-std/Test.sol";
 import {RebaseToken} from "../src/RebaseToken.sol";
 import {Vault} from "../src/Vault.sol";
 import {IRebaseToken} from "../src/interfaces/IRebaseToken.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 contract RebaseTokenTest is Test {
     RebaseToken private rebaseToken;
@@ -130,7 +132,15 @@ contract RebaseTokenTest is Test {
 
     function testCannotSetInterestRateIfNotOwner(uint256 newInterestRate) public {
         vm.prank(user1);
-        vm.expectRevert();
+        vm.expectPartialRevert(bytes4(Ownable.OwnableUnauthorizedAccount.selector));
         rebaseToken.setInterestRate(newInterestRate);
+    }
+
+    function testCannotCallMintAndBurn() public {
+        vm.prank(user1);
+        vm.expectPartialRevert(bytes4(IAccessControl.AccessControlUnauthorizedAccount.selector));
+        rebaseToken.mint(user1, 100);
+        vm.expectPartialRevert(bytes4(IAccessControl.AccessControlUnauthorizedAccount.selector));
+        rebaseToken.burn(user1, 100);
     }
 }
