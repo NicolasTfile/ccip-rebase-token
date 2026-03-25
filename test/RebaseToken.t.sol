@@ -94,4 +94,33 @@ contract RebaseTokenTest is Test {
         assertEq(ethBalance, balanceAfterSomeTime);
         assertGt(ethBalance, depositAmount);
     }
+
+    function testTransfer(uint256 amount, uint256 amountToSend) public {
+        amount = bound(amount, 1e5 + 1e5, type(uint96).max);
+        amountToSend = bound(amountToSend, 1e5, amount - 1e5);
+
+        // 1. deposit
+        vm.deal(user1, amount);
+        vm.prank(user1);
+        vault.deposit{value: amount}();
+
+        address user2 = makeAddr("user2");
+        uint256 user1Balance = rebaseToken.balanceOf(user1);
+        uint256 user2Balance = rebaseToken.balanceOf(user2);
+        assertEq(user1Balance, amount);
+        assertEq(user2Balance, 0);
+
+        // owner reduces interest rate
+        vm.prank(owner);
+        rebaseToken.setInterestRate(4e10);
+
+        // 2. transfer
+        vm.prank(user1);
+        rebaseToken.transfer(user2, amountToSend);
+        uint256 user1BalanceAfterTransfer = rebaseToken.balanceOf(user1);
+        uint256 user2BalanceAfterTransfer = rebaseToken.balanceOf(user2);
+
+        assertEq(user1BalanceAfterTransfer, user1Balance - amountToSend);
+        assertEq(user2BalanceAfterTransfer, amountToSend);
+    }
 }
