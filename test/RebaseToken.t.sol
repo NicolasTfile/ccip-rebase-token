@@ -122,5 +122,9 @@ contract RebaseTokenTest is Test {
 
         assertEq(user1BalanceAfterTransfer, user1Balance - amountToSend);
         assertEq(user2BalanceAfterTransfer, amountToSend);
+
+        // check the users interest rate has been inherited (5e10 not 4e10)
+        assertEq(rebaseToken.getUserInterestRate(user1), 5e10);
+        assertEq(rebaseToken.getUserInterestRate(user2), 5e10);
     }
 }
