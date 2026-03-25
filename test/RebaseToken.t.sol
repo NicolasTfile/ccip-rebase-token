@@ -264,4 +264,15 @@ contract RebaseTokenTest is Test {
 
         assertEq(rebaseToken.balanceOf(user1), 400);
     }
+
+    // function testRedeemFailedIfVaultEmpty(uint256 amount) public {
+    //     amount = bound(amount, 1e5, type(uint96).max);
+    //     // Redeem
+    //     vm.startPrank(user1);
+    //     vm.deal(user1, amount);
+    //     vault.deposit{value: amount}();
+    //     vm.expectRevert(Vault.Vault__RedeemFailed.selector);
+    //     vault.redeem(amount + 1);
+    //     vm.stopPrank();
+    // }
 }
