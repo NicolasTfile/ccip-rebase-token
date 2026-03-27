@@ -265,14 +265,37 @@ contract RebaseTokenTest is Test {
         assertEq(rebaseToken.balanceOf(user1), 400);
     }
 
-    // function testRedeemFailedIfVaultEmpty(uint256 amount) public {
-    //     amount = bound(amount, 1e5, type(uint96).max);
-    //     // Redeem
-    //     vm.startPrank(user1);
-    //     vm.deal(user1, amount);
-    //     vault.deposit{value: amount}();
-    //     vm.expectRevert(Vault.Vault__RedeemFailed.selector);
-    //     vault.redeem(amount + 1);
-    //     vm.stopPrank();
-    // }
+    function testRedeemRevertsIfEthTransferFails(uint256 amount) public {
+        amount = bound(amount, 1e5, type(uint96).max);
+        // Deploy the rejector contract
+        RejectEther rejector = new RejectEther(vault);
+        vm.prank(owner);
+        rebaseToken.grantMintAndBurnRole(user1);
+
+        // Fund the vault so the redeem attempt actually reaches the transfer line
+        vm.startPrank(user1);
+        vm.deal(user1, amount);
+        vault.deposit{value: amount}();
+
+        // Give the rejector contract some rebase tokens so it has a balance to redeem
+        rebaseToken.mint(address(rejector), amount);
+
+        // Expect the specific custom error revert
+        vm.expectRevert(Vault.Vault__RedeemFailed.selector);
+        rejector.callRedeem(amount);
+        vm.stopPrank();
+    }
+}
+
+// A contract with no receive() or fallback()
+contract RejectEther {
+    Vault private rejectVault;
+
+    constructor(Vault _vault) {
+        rejectVault = _vault;
+    }
+
+    function callRedeem(uint256 amount) external {
+        rejectVault.redeem(amount);
+    }
 }
