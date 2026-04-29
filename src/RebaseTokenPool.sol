@@ -28,5 +28,8 @@ contract RebaseTokenPool is TokenPool {
     function releaseOrMint(Pool.ReleaseOrMintInV1 calldata releaseOrMintIn)
         public
         returns (Pool.ReleaseOrMintOutV1 memory)
-    {}
+    {
+        _validateReleaseOrMint(releaseOrMintIn);
+        uint256 userInterestRate = abi.decode(releaseOrMintIn.sourcePoolData, (uint256));
+    }
 }
