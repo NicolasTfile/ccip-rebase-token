@@ -19,6 +19,10 @@ contract RebaseTokenPool is TokenPool {
         address receiver = abi.decode(lockOrBurnIn.receiver, (address));
         uint256 userInterestRate = IRebaseToken(address(i_token)).getUserInterestRate(receiver);
         IRebaseToken(address(i_token)).burn(address(this), lockOrBurnIn.amount);
+        lockOrBurnOut = Pool.LockOrBurnOutV1({
+            destTokenAddress: getRemoteToken(lockOrBurnIn.remoteChainSelector),
+            destPoolData: abi.encode(userInterestRate)
+        });
     }
 
     function releaseOrMint(Pool.ReleaseOrMintInV1 calldata releaseOrMintIn)
