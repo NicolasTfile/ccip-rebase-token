@@ -31,5 +31,8 @@ contract RebaseTokenPool is TokenPool {
     {
         _validateReleaseOrMint(releaseOrMintIn);
         uint256 userInterestRate = abi.decode(releaseOrMintIn.sourcePoolData, (uint256));
+        IRebaseToken(address(i_token)).mint(releaseOrMintIn.receiver, releaseOrMintIn.amount, userInterestRate);
+
+        return Pool.ReleaseOrMintOutV1({destinationAmount: releaseOrMintIn.amount});
     }
 }
