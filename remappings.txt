@@ -1,0 +1,9 @@
+@ccip/contracts/=lib/chainlink-ccip/chains/evm/contracts/
+@openzeppelin/contracts@5.3.0/=lib/openzeppelin-contracts-5.3.0/contracts/
+@openzeppelin/=lib/openzeppelin-contracts/
+chainlink-ccip/=lib/chainlink-ccip/
+erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/
+forge-std/=lib/openzeppelin-contracts/lib/forge-std/src/
+halmos-cheatcodes/=lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/
+openzeppelin-contracts-5.3.0/=lib/openzeppelin-contracts-5.3.0/
+openzeppelin-contracts/=lib/openzeppelin-contracts/
